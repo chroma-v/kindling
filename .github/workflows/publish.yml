@@ -1,0 +1,104 @@
+# Publish packages/* to npm under the @chromav scope.
+#
+# Auth is npm OIDC trusted publishing — no long-lived NPM_TOKEN. npm mints a
+# short-lived credential scoped to this one workflow run, in exchange for the
+# GitHub OIDC token that `permissions: id-token: write` allows.
+#
+# ⚠️ This job MUST stay on a GitHub-hosted runner. npm trusted publishing does
+# not support self-hosted runners, and Blacksmith runners register as
+# self-hosted — so do NOT apply cobaltplan's `vars.CI_RUNNER` pattern here.
+# Doing so breaks publishing with an OIDC error, not an obvious runner error.
+#
+# Three layers guard that, outermost first:
+#  1. This repo is scoped OUT of the Blacksmith GitHub App's repository access
+#     (org settings -> GitHub Apps -> Blacksmith -> only chroma-v/cobaltplan).
+#     Its workflow-migration bot therefore cannot see this repo or open a PR
+#     against it. Re-adding kindling there reopens the hole.
+#  2. A human still has to merge any such PR — the bot opens, it cannot merge.
+#  3. The RUNNER_ENVIRONMENT preflight below fails loudly if one slips through.
+#
+# Layer 1 exists because the bot already did this once (#3, reverted in #4),
+# changing the line directly beneath this warning. Comments do not constrain
+# automation; access scoping does.
+#
+# Requires npm >= 11.5.1 (Node 24 ships a newer npm; pinned explicitly below)
+# and a trusted publisher registered on EACH package at npmjs.com:
+#   org chroma-v / repo kindling / workflow publish.yml
+#
+# Keep setup-node at >= v7. Earlier versions exported a placeholder
+# NODE_AUTH_TOKEN ("XXXXX-...") whenever registry-url was set, which lands in
+# .npmrc and muddies OIDC auth; v7 removed it (actions/setup-node#1558) and
+# documents trusted publishing outright. Downgrading reintroduces the stray
+# token into exactly the auth path this workflow depends on.
+#
+# Runs scripts/publish-packages.mjs, which skips any package whose current
+# version is already on npm -- so pushes that don't bump a package's version
+# (e.g. a sync from cobaltplan with no version change) are safe no-ops.
+# Bump the version in cobaltplan to cut a release; it flows here via
+# sync-kindling and this workflow publishes it.
+#
+# See README.md and cobaltplan's docs/development/kindling-mirror.md.
+#
+# Security note: no untrusted event data is interpolated into run: commands,
+# and there is no longer any secret to leak.
+
+name: Publish to npm
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "packages/*/package.json"
+  workflow_dispatch:
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # GitHub-hosted only — see the runner warning at the top of this file.
+    runs-on: ubuntu-latest # DO NOT change — see the runner warning above
+    permissions:
+      contents: read
+      id-token: write # mints the OIDC token npm exchanges for publish rights
+    steps:
+      - name: Assert a GitHub-hosted runner (OIDC requirement)
+        run: |
+          if [ "$RUNNER_ENVIRONMENT" != "github-hosted" ]; then
+            echo "::error::publish.yml is on a '$RUNNER_ENVIRONMENT' runner." \
+              "npm trusted publishing only works on GitHub-hosted runners," \
+              "so OIDC auth would fail here with a confusing error." \
+              "Revert runs-on to ubuntu-latest. Blacksmith's workflow-migration" \
+              "bot did exactly this once (kindling#3) despite the header comment."
+            exit 1
+          fi
+          echo "runner environment: $RUNNER_ENVIRONMENT"
+
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Pin npm to a trusted-publishing-capable version
+        run: |
+          npm install -g npm@latest
+          npm --version
+
+      - name: Install
+        run: npm ci
+
+      # check.yml fires on this same push, but nothing orders the two — so a
+      # drift that slipped in could publish before it ever went red. This is
+      # the zero-dependency half of that check (no install needed beyond the
+      # one above), guarding the release path directly.
+      - name: Root-pin invariant
+        run: npm run check:root-pins
+
+      - name: Build
+        run: npm run build
+
+      - name: Publish (skips packages whose version is already on npm)
+        run: npm run publish:packages

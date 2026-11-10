@@ -1,0 +1,35 @@
+{
+  "name": "kindling",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Framework-agnostic packages extracted from cobaltplan for reuse across apps — small pieces other things build on.",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "biome lint .",
+    "lint:fix": "biome lint --write .",
+    "format": "biome format --write .",
+    "check": "npm run check:root-pins && npm run lint && npm run typecheck && npm run build && npm test",
+    "check:root-pins": "node scripts/check-root-pins.mjs",
+    "check:mirror": "node scripts/check-mirror-parity.mjs",
+    "publish:packages": "node scripts/publish-packages.mjs",
+    "docs:dev": "npm run dev:docs -w @kindling/docs",
+    "docs:build": "npm run build:docs -w @kindling/docs",
+    "docs:preview": "npm run preview:docs -w @kindling/docs",
+    "docs:audit": "npm run audit:docs -w @kindling/docs"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.14",
+    "semver": "^7.8.5"
+  },
+  "overrides": {
+    "better-sqlite3": "12.9.0"
+  }
+}

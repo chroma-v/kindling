@@ -1,0 +1,64 @@
+---
+title: Sizzler
+description: Column factories and utilities for Drizzle ORM on SQLite, D1, and Turso, plus Node-only tooling for local D1 discovery, seeding, and golden snapshots.
+---
+
+Sensible defaults for Drizzle + SQLite. Stop bikeshedding IDs, timestamps, and
+foreign keys — define your schema and get back to building.
+
+```typescript
+import {
+  primaryKey, foreignKey, createdAt, updatedAt, table, text, enums,
+} from "@chromav/sizzler";
+
+const status = ["pending", "in_progress", "done"] as const;
+
+export const tasks = table("tasks", {
+  id: primaryKey(),                        // ULID — sortable, client-generatable
+  title: text("title").notNull(),
+  status: enums("status", status),          // type-safe, defaults to first value
+  assigneeId: foreignKey("assignee_id", users.id),
+  createdAt: createdAt(),                  // unixepoch() default
+  updatedAt: updatedAt(),
+});
+```
+
+## Install
+
+```package-install
+npm install @chromav/sizzler
+```
+
+`drizzle-orm` is a peer dependency. `better-sqlite3` and `drizzle-seed` are
+optional peers, needed only for the Node-only tooling.
+
+## What's in the box
+
+**Schema factories** — every factory returns a standard Drizzle column builder,
+so you can chain `.notNull()`, `.unique()`, or anything else and keep using
+`drizzle-kit` as normal. All of them are Workers-safe.
+
+**Local dev helpers** (`@chromav/sizzler/node`) — compute the exact hashed
+filename miniflare uses for a D1 database, find your local D1 file, load seed
+data with automatic transforms, and reset/reseed behind an explicit
+confirmation. No more hunting through `.wrangler/`.
+
+**Golden snapshots** (`@chromav/sizzler/node`) — create and restore
+self-contained SQLite snapshots, the foundation for fast, reproducible E2E
+tests.
+
+<Callout type="warning">
+  The `node` entry point requires Node.js. Import it only in CLI scripts and
+  tests — never in Workers code.
+</Callout>
+
+## Where to go next
+
+<CardGroup cols={2}>
+  <Card title="API Reference" href="/sizzler/api-reference">
+    Every column factory, with the SQLite type it produces.
+  </Card>
+  <Card title="Node Utilities" href="/sizzler/node-utilities">
+    D1 discovery, seeding, and golden snapshots.
+  </Card>
+</CardGroup>

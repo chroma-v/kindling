@@ -1,0 +1,74 @@
+{
+  "name": "frizzle",
+  "version": "0.4.6",
+  "description": "A fun, type-safe query compiler with a parser-combinator grammar, pluggable code generators, and built-in validation. Filter, sort, and query your data.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./drizzle": {
+      "import": "./dist/drizzle.js",
+      "types": "./dist/drizzle.d.ts"
+    },
+    "./sql": {
+      "import": "./dist/sql.js",
+      "types": "./dist/sql.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup && tsc -p tsconfig.build.json --emitDeclarationOnly",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit"
+  },
+  "peerDependencies": {
+    "drizzle-orm": ">=0.30.0 || >=1.0.0-beta.1"
+  },
+  "peerDependenciesMeta": {
+    "drizzle-orm": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.6.2",
+    "drizzle-orm": "1.0.0-rc.5-ab785fc",
+    "fast-check": "^4.8.0",
+    "tsup": "^8.5.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.5"
+  },
+  "author": "Cobaltplan",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chroma-v/kindling.git",
+    "directory": "packages/frizzle"
+  },
+  "homepage": "https://github.com/chroma-v/kindling/tree/main/packages/frizzle#readme",
+  "bugs": {
+    "url": "https://github.com/chroma-v/kindling/issues"
+  },
+  "keywords": [
+    "query",
+    "compiler",
+    "lexer",
+    "parser",
+    "parser-combinator",
+    "filter",
+    "ast",
+    "drizzle"
+  ],
+  "license": "MIT"
+}

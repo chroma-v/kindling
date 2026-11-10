@@ -1,0 +1,71 @@
+# Build and deploy the kindling docs site to Cloudflare Workers (static assets).
+#
+# The docs build reads only markdown — it never imports frizzle or sizzler — so
+# it doesn't need `npm run build` first, which keeps this job independent of the
+# packages' build.
+#
+# INERT until CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are set; the build
+# still runs and still gates on `blume build`'s strict diagnostics. Pull
+# requests build but never deploy, so a fork PR can't publish.
+#
+# Security note: no untrusted event data (titles, messages, refs) is
+# interpolated into run: commands. The only expressions used are secrets,
+# promoted to job-level env — HAS_CF_TOKEN has to be job-level because a step's
+# own `env:` is not in scope for that step's `if:`.
+
+name: Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/docs/**"
+      - "packages/*/docs/**"
+      - ".github/workflows/docs.yml"
+  pull_request:
+    paths:
+      - "apps/docs/**"
+      - "packages/*/docs/**"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: docs-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      HAS_CF_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Stages packages/*/docs into apps/docs/docs, then builds. `blume build`
+      # is strict by default: broken internal links and content diagnostics
+      # fail the job rather than shipping a subtly broken site.
+      - name: Build docs
+        run: npm run docs:build
+
+      - name: Deploy to Cloudflare Workers
+        if: github.event_name != 'pull_request' && env.HAS_CF_TOKEN == 'true'
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        working-directory: apps/docs
+        run: npx wrangler deploy
+
+      - name: Skip deploy (no Cloudflare credentials configured)
+        if: github.event_name != 'pull_request' && env.HAS_CF_TOKEN != 'true'
+        run: echo "CLOUDFLARE_API_TOKEN not set — build verified, deploy skipped."

@@ -1,0 +1,23 @@
+{
+  "name": "@kindling/docs",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Documentation site for the kindling packages (frizzle, sizzler).",
+  "scripts": {
+    "stage": "node scripts/stage-package-docs.mjs",
+    "predev:docs": "npm run stage",
+    "dev:docs": "blume dev",
+    "prebuild:docs": "npm run stage",
+    "build:docs": "blume build",
+    "preview:docs": "blume preview",
+    "preaudit:docs": "npm run stage",
+    "audit:docs": "blume audit"
+  },
+  "dependencies": {
+    "blume": "^1.6.3"
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  }
+}

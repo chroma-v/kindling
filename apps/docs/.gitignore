@@ -1,0 +1,10 @@
+dist/
+.blume/
+.astro/
+
+# Staged from packages/*/docs by scripts/stage-package-docs.mjs on every
+# dev/build run. The subtree under packages/* is the source of truth; a
+# committed copy would silently drift on the next sync from cobaltplan.
+# Upstream docs are .md; everything authored here is .mdx or .ts.
+docs/frizzle/*.md
+docs/sizzler/*.md

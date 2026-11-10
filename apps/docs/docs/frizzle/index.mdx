@@ -1,0 +1,65 @@
+---
+title: Frizzle
+description: A type-safe query compiler — parser-combinator grammar, pluggable code generators, filter/sort language, and validation. Zero runtime dependencies.
+---
+
+Parse URL-safe filter strings, compile them to database queries (Drizzle ORM or
+raw SQL), and compose interceptor pipelines for scoping, soft-delete, and audit
+trails — with zero exceptions thrown.
+
+```
+?filter=status eq 'active' AND priority eq 'high'&sort=createdAt:desc&limit=50
+```
+
+## Install
+
+```package-install
+npm install @chromav/frizzle
+```
+
+Drizzle ORM is an *optional* peer dependency — needed only if you use the
+Drizzle code generators (`@chromav/frizzle/drizzle`).
+
+## A first query
+
+```typescript
+import { isSuccess } from "@chromav/frizzle";
+import { compileFilter } from "@chromav/frizzle/drizzle";
+
+const result = await compileFilter(
+  "status eq 'active' AND priority eq 'high'",
+  { status: "status", priority: "priority" }
+);
+
+if (isSuccess(result)) {
+  const tasks = await db.query.tasks.findMany({ where: result.data });
+}
+```
+
+Every function returns a `Result<T>` — a discriminated union of success or
+error. Nothing throws, so error handling stays explicit and composable.
+
+## Where to go next
+
+<CardGroup cols={2}>
+  <Card title="Getting Started" href="/frizzle/getting-started">
+    The two ways to use frizzle, and which one you want.
+  </Card>
+  <Card title="Query Language" href="/frizzle/query-language">
+    The filter, sort, and pagination expression syntax.
+  </Card>
+  <Card title="Schema Validation" href="/frizzle/schema-validation">
+    Catch bad filters before they reach the database.
+  </Card>
+  <Card title="Recipes" href="/frizzle/recipes">
+    Framework integrations, end to end.
+  </Card>
+</CardGroup>
+
+## Entry points
+
+| Import | What's in it |
+| --- | --- |
+| `@chromav/frizzle` | Parser, validation, `Result` helpers, descriptors |
+| `@chromav/frizzle/drizzle` | Drizzle ORM code generators |
+| `@chromav/frizzle/sql` | Parameterized raw-SQL target |

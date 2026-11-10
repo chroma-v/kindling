@@ -1,0 +1,41 @@
+---
+title: kindling
+description: Small, dependency-light packages other things build on.
+---
+
+Packages for building data-driven screens on Drizzle/SQLite stacks. Extracted
+from a working product rather than designed in the abstract — each one earns its
+place by being used.
+
+<CardGroup cols={2}>
+  <Card title="Frizzle" icon="filter" href="/frizzle">
+    A type-safe query compiler. Parse URL-safe filter strings, compile them to
+    Drizzle or raw SQL, and compose interceptor pipelines. Zero runtime
+    dependencies, no exceptions thrown.
+  </Card>
+  <Card title="Sizzler" icon="database" href="/sizzler">
+    Column factories and utilities for Drizzle ORM on SQLite, D1, and Turso —
+    plus Node-only tooling for local D1 discovery, seeding, and golden
+    snapshots.
+  </Card>
+</CardGroup>
+
+## Install
+
+```package-install
+npm install @chromav/frizzle @chromav/sizzler
+```
+
+The published names are scoped. Internally — in the monorepo they're developed
+in, and in this repo's own `packages/*` — they're just `frizzle` and `sizzler`;
+the scope is applied only at publish time.
+
+Entry points: `@chromav/frizzle`, `@chromav/frizzle/drizzle`,
+`@chromav/frizzle/sql`, `@chromav/sizzler`, `@chromav/sizzler/node`.
+
+## Vendoring instead
+
+Both packages are self-contained — own build, own tests, own `exports` map. If
+you'd rather not take an npm dependency, `git subtree add` the repo into your
+monorepo, add `<prefix>/packages/*` to your npm `workspaces`, then
+`npm install && npm run build`.

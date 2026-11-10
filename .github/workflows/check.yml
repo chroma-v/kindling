@@ -1,0 +1,87 @@
+# Lint, typecheck, build and test the mirrored packages.
+#
+# Why this exists — the failure it is here to catch:
+#
+# cobaltplan is the source of truth; its sync-kindling script copies each
+# packages/<pkg> into this repo. That sync carries package source and each
+# package's own package.json, but NOT this repo's ROOT package.json — the root
+# is kindling-owned and never synced.
+#
+# That bit once. The root used to pin drizzle-orm and re-export it through
+# `overrides: { "drizzle-orm": "$drizzle-orm" }`, which wins over whatever a
+# package declares for itself. cobaltplan moved to drizzle 1.0.0-rc.5, where
+# the SQLite database type `BaseSQLiteDatabase` was renamed
+# `SQLiteAsyncDatabase`; the sync brought sizzler's rc.5 source here while
+# the root still pinned beta.22, and `tsc` failed with TS2305 (no exported
+# member 'SQLiteAsyncDatabase'). Nothing ran `npm run check` on push, so the
+# break sat on main — publish.yml runs `npm run build`, so it would have
+# surfaced only at publish time, blocking a release.
+#
+# The root no longer pins shared deps at all; packages/*/package.json
+# governs and npm hoists one copy. `npm run check:root-pins` (the first step
+# of `npm run check`) keeps it that way.
+#
+# Hence `push: main` and no path filter, both load-bearing:
+#  - Syncs are pushed straight to main, with no PR, so a
+#    pull_request-only trigger would never see them.
+#  - The root package.json is the half that drifts, so filtering to
+#    packages/** would miss exactly the file that causes this.
+#
+# When this job goes red after a sync, the usual fix is to bring the root
+# pins in line with the packages' own devDependencies, not to edit
+# packages/* — those edits are overwritten by the next sync.
+#
+# See README.md and cobaltplan's docs/development/kindling-mirror.md.
+#
+# Runner note: ubuntu-latest, matching publish.yml. Read the runner warning
+# at the top of publish.yml before introducing cobaltplan's vars.CI_RUNNER
+# pattern anywhere in this repo.
+
+name: Check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Lint, typecheck, build, test
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # check:root-pins && lint && typecheck && build && test
+      - name: Check
+        run: npm run check
+
+  # packages/ must match the last cobaltplan sync (scripts/check-mirror-parity.mjs).
+  # Own job: it needs full history and no install.
+  mirror:
+    name: Mirrored packages match cobaltplan
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Check mirror parity
+        run: node scripts/check-mirror-parity.mjs

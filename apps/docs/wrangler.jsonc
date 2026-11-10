@@ -1,0 +1,20 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kindling-docs",
+  "compatibility_date": "2026-09-09",
+
+  // A static-assets-only Worker: no "main", so there's no script to run —
+  // Cloudflare serves `dist/` straight from its edge. Blume's static build
+  // needs nothing at request time (Ask AI / MCP would, and would mean
+  // output: "server" plus the @astrojs/cloudflare adapter).
+  "assets": {
+    "directory": "./dist",
+    // Serve Blume's own 404 page rather than Cloudflare's default. Not
+    // "single-page-application" — this is a prerendered multi-page site.
+    "not_found_handling": "404-page"
+  },
+
+  "observability": {
+    "enabled": true
+  }
+}
