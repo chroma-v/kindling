@@ -101,4 +101,7 @@ jobs:
         run: npm run build
 
       - name: Publish (skips packages whose version is already on npm)
+        # Temporary: shows why npm refuses the OIDC exchange (trusted publisher mismatch).
+        env:
+          NPM_CONFIG_LOGLEVEL: verbose
         run: npm run publish:packages
