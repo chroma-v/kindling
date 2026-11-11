@@ -1,6 +1,6 @@
 {
   "name": "sizzler",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Sizzling column factories and utilities for Drizzle ORM with SQLite, D1, and Turso",
   "type": "module",
   "main": "./dist/index.js",
