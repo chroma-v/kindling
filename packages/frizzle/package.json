@@ -1,6 +1,6 @@
 {
   "name": "frizzle",
-  "version": "0.4.6",
+  "version": "0.4.7",
   "description": "A fun, type-safe query compiler with a parser-combinator grammar, pluggable code generators, and built-in validation. Filter, sort, and query your data.",
   "type": "module",
   "main": "./dist/index.js",
